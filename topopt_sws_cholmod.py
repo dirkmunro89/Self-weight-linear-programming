@@ -5,6 +5,7 @@ import numpy as np
 
 import osqp
 from scipy.sparse import csc_matrix
+from scipy.optimize import linprog
 
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg import spsolve
@@ -13,13 +14,12 @@ import matplotlib.pyplot as plt
 import cvxopt ;import cvxopt.cholmod
 
 def main(nelx,nely,volfrac,penal,rmin,ft):
-	print("Minimum compliance self-weight problem with LP(OSQP)+AML")
+	print("Minimum compliance self-weight problem with LP(Scipy)+AML")
 	print("ndes: " + str(nelx) + " x " + str(nely))
 	print("volfrac: " + str(volfrac) + ", rmin: " + str(rmin) + ", penal: " + str(penal))
 	print("Filter method: " + ["Sensitivity based","Density based"][ft])
 
 	mov_fct=0.5e0*np.ones(nelx*nely)
-	prob = osqp.OSQP()
 
 	# Max and min stiffness
 	Emin=1e-9
@@ -142,7 +142,7 @@ def main(nelx,nely,volfrac,penal,rmin,ft):
 
 		# Optimality criteria (change)
 		xold[:]=x
-		(x[:])=lp(nelx,nely,x,volfrac,dc,dv,g,xolder,xoldest,loop,mov_fct,prob)
+		(x[:])=lp(nelx,nely,x,volfrac,dc,dv,g,xolder,xoldest,loop,mov_fct)
 		xoldest[:]=xolder; xolder[:]=xold
  
 		# Filter design variables
@@ -180,7 +180,7 @@ def lk():
 	[k[7], k[2], k[1], k[4], k[3], k[6], k[5], k[0]] ]);
 	return (KE)
 
-def lp(nelx,nely,x,volfrac,dc,dv,g,xolder,xoldest,loop,mov_fct,prob):
+def lp(nelx,nely,x,volfrac,dc,dv,g,xolder,xoldest,loop,mov_fct):
 #
 	n=nelx*nely
 #
@@ -195,17 +195,11 @@ def lp(nelx,nely,x,volfrac,dc,dv,g,xolder,xoldest,loop,mov_fct,prob):
 	dx_l=np.maximum(x-mov_fct*mov,np.zeros(n))-x
 	dx_u=np.minimum(x+mov_fct*mov,np.ones(n))-x
 #
-	J=dc; tmp=np.zeros((n,n)); np.fill_diagonal(tmp,1e0)
-	A=csc_matrix(np.append(dv.reshape((1,n)),tmp,axis=0))
-	u=-g; l=-np.ones(1)*1e16; l=np.append(l,dx_l); u=np.append(u,dx_u)
+	bds=[]
+	for i in range(n):
+		bds.append((dx_l[i],dx_u[i]))
 #
-	if loop==1:
-		Q=csc_matrix((np.ones(n)*1e-6,(np.array(range(n)),np.array(range(n)))),shape=(n,n))
-		prob.setup(Q, J, A, l, u,verbose=False,warm_start=False)
-	else: prob.update(q=J, Ax=A.data, l=l, u=u)
-	res=prob.solve()
-#
-	if res.info.status != 'solved': print('WARNING')
+	res = linprog(dc, A_ub=dv.reshape((1,n)), b_ub=-g, bounds=bds,method='interior-point')
 #
 	xnew=x+np.maximum(np.minimum(res.x,dx_u),dx_l)
 #

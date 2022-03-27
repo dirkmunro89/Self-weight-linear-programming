@@ -11,3 +11,8 @@ The *raw_input()* command with which it terminates has been replaced by *input()
 Self-weight version of compliance problem solved with LP ([OSQP](https://osqp.org/docs/index.html)) and the adaptive move-limit implied by the [MMA](https://people.kth.se/~krille/mmagcmma.pdf), excecuted with
 
 `python3 topopt\_sw\_cholmod.py 100 100 0.2 5.4 3.0 1`
+
+Although a clear slow-down is noticed *vs* the much simpler standard minimum compliance OC method, [OSQP](https://osqp.org/docs/index.html) performs decently as an LP solver, given that the author has not managed to make the equivalent SCIPY LP solver perform at all; see *e.g.* 
+
+`python3 topopt\_sws\_cholmod.py 100 100 0.2 5.4 3.0 1`
+
