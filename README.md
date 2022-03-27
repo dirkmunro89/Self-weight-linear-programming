@@ -6,7 +6,7 @@ Standard compliance code excecution
 
 `python3 topopt\_cholmod.py 180 60 0.4 5.4 3.0 1`
 
-The `raw_input` command with which it terminates has been replaced by `input` as per Python 3 compatibility.
+The *raw_input()* command with which it terminates has been replaced by *input()* for Python 3 compatibility.
 
 Self-weight version of compliance problem solved with LP ([OSQP](https://osqp.org/docs/index.html)) and the adaptive move-limit implied by the [MMA](https://people.kth.se/~krille/mmagcmma.pdf), excecuted with
 
